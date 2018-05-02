@@ -7,6 +7,10 @@ import java.io.ObjectOutputStream;
 import java.net.*;
 import java.util.Arrays;
 
+/**
+ * This class advertises following packet: NAME (30 bytes) | PUBLIC_KEY (2048 bytes) |
+ * ROUTING_TABLE_OBJECT It is advertised on a multicast address
+ */
 public class Advertiser implements Runnable {
   private Client client;
   private DatagramSocket socket;
@@ -42,12 +46,19 @@ public class Advertiser implements Runnable {
   }
 
   private void work() {
+    // Creating header for this message
     byte[] bytename =
         Arrays.copyOf(client.getClientName().getBytes(), Constants.HEADER_NAME_LENGTH);
     System.arraycopy(bytename, 0, header, 0, Constants.HEADER_NAME_LENGTH);
-    System.arraycopy(client.getPubKey().getEncoded(), 0, header, Constants.HEADER_NAME_LENGTH, client.getPubKey().getEncoded().length);
+    System.arraycopy(
+        client.getPubKey().getEncoded(),
+        0,
+        header,
+        Constants.HEADER_NAME_LENGTH,
+        client.getPubKey().getEncoded().length);
     ByteArrayOutputStream bos = new ByteArrayOutputStream();
     ObjectOutput out = null;
+    // Converting routing table HashMap to bytes
     try {
       bos.write(header, 0, Constants.HEADER_SIZE);
       out = new ObjectOutputStream(bos);

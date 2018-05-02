@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/** Class that sends actual messages based on the routing table entries. */
 public class Communicator extends java.util.Observable implements Runnable {
   private Client client;
   private int serverPort = Constants.COMMUNICATION_PORT;
@@ -25,6 +26,10 @@ public class Communicator extends java.util.Observable implements Runnable {
     new Thread(this).start();
   }
 
+  /**
+   * Listens on a port and if someone connects to it, creates connectionHandler. Basically a simple
+   * server
+   */
   @Override
   public void run() {
     try {
@@ -38,16 +43,16 @@ public class Communicator extends java.util.Observable implements Runnable {
     }
   }
 
+  private void setUp() throws IOException {
+    serverSocket = new ServerSocket(serverPort);
+  }
+
   public boolean isStop() {
     return stop;
   }
 
   public void setStop(boolean stop) {
     this.stop = stop;
-  }
-
-  private void setUp() throws IOException {
-    serverSocket = new ServerSocket(serverPort);
   }
 
   private void work() throws IOException {
@@ -58,6 +63,12 @@ public class Communicator extends java.util.Observable implements Runnable {
     new Thread(service).start();
   }
 
+  /**
+   * Connects to a client by his name given that a routing table entry exists for such name.
+   *
+   * @param name
+   * @return ConnectionHandler for client with that name
+   */
   public ConnectionHandler connect(String name) {
     Socket socket;
     ConnectionHandler conHand = null;
@@ -74,6 +85,14 @@ public class Communicator extends java.util.Observable implements Runnable {
     return conHand;
   }
 
+  /**
+   * sending single message to some client
+   *
+   * @param type of the message. [ONE, CLOSE, FILE, ACK]
+   * @param recipient to whom we're trying to send the message or null if type is ALL.
+   * @param cipher do we want to encrypt our message?
+   * @param key public key of the recipient
+   */
   public void send(
       Message.messageType type, String recipient, String message, boolean cipher, PublicKey key) {
     ConnectionHandler handler = networkClients.get(recipient);
@@ -86,6 +105,15 @@ public class Communicator extends java.util.Observable implements Runnable {
     handler.sendMessage(messageWithHeader);
   }
 
+  /**
+   * Sending message to all known clients
+   *
+   * @param type
+   * @param recipient
+   * @param message
+   * @param cipher
+   * @param key
+   */
   public void sendAll(
       Message.messageType type, String recipient, String message, boolean cipher, PublicKey key) {
     byte[] messageWithHeader =
@@ -105,6 +133,7 @@ public class Communicator extends java.util.Observable implements Runnable {
     }
   }
 
+  /** Class that holds single connection to some arbitrary client */
   class ConnectionHandler implements Runnable {
     public volatile boolean stop = false;
     Socket socket;
@@ -125,9 +154,13 @@ public class Communicator extends java.util.Observable implements Runnable {
       }
     }
 
+    /**
+     * Listening on this particular connection and acting accordingly to the received message's type
+     */
     private void work() {
       try {
-        // MESSAGE PROTOCOL: TYPE[0]("ALL", "ONE", "CLOSE", "FILE") RECIPIENT_NAME[1] SENDERS_NAME[2] CONTENT[3]
+        // MESSAGE PROTOCOL: TYPE[0]("ALL", "ONE", "CLOSE", "FILE") RECIPIENT_NAME[1]
+        // SENDERS_NAME[2] CONTENT[3]
         if (socket.getInputStream().available() != 0) {
           byte[] messageBytes = new byte[Constants.FULL_MESSAGE_LENGTH];
           int count = stream.read(messageBytes);

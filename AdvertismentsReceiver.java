@@ -12,6 +12,10 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.HashMap;
 
+/**
+ * This class listens on multicast address and supplies received packets to the client class, which
+ * then modifies it's own routing table.
+ */
 public class AdvertismentsReceiver implements Runnable {
   private Client client;
   private int port;
@@ -56,10 +60,21 @@ public class AdvertismentsReceiver implements Runnable {
       e.printStackTrace();
     }
     if (packet.getData() != null) {
+      // Stripping raw bytes to individual parts (name, public key, routing table)
       System.arraycopy(packet.getData(), 0, head, 0, Constants.HEADER_SIZE);
-      System.arraycopy(packet.getData(), Constants.HEADER_SIZE, afterHead, 0, packet.getLength() - Constants.HEADER_SIZE);
+      System.arraycopy(
+          packet.getData(),
+          Constants.HEADER_SIZE,
+          afterHead,
+          0,
+          packet.getLength() - Constants.HEADER_SIZE);
       System.arraycopy(head, 0, sendersName, 0, Constants.HEADER_NAME_LENGTH);
-      System.arraycopy(head, Constants.HEADER_NAME_LENGTH, receivedPublicKey,0, Constants.HEADER_SIZE - Constants.HEADER_NAME_LENGTH);
+      System.arraycopy(
+          head,
+          Constants.HEADER_NAME_LENGTH,
+          receivedPublicKey,
+          0,
+          Constants.HEADER_SIZE - Constants.HEADER_NAME_LENGTH);
       sendersName = Constants.trim(sendersName);
       try {
         if (!packet
@@ -69,12 +84,16 @@ public class AdvertismentsReceiver implements Runnable {
           HashMap<String, InetAddress> receivedTable;
           ByteArrayInputStream bis = new ByteArrayInputStream(afterHead);
           ObjectInput in = null;
+          // Converting received routing table bytes to routing table HashMap
           try {
             in = new ObjectInputStream(bis);
             receivedTable = (HashMap<String, InetAddress>) in.readObject();
             client.receiveHashMap(receivedTable, packet.getAddress(), new String(sendersName));
             try {
-              PublicKey publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(receivedPublicKey));
+              PublicKey publicKey =
+                  KeyFactory.getInstance("RSA")
+                      .generatePublic(new X509EncodedKeySpec(receivedPublicKey));
+              // passing to received routing table to client
               client.addPublicKey(new String(sendersName), publicKey);
             } catch (InvalidKeySpecException e) {
               e.printStackTrace();

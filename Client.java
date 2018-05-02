@@ -7,9 +7,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+/** This class holds client's data and merges received routing tables */
 public class Client extends java.util.Observable {
 
   private PublicKey publicKey;
+  private PrivateKey privateKey;
   private List<String> neigbours;
   private ArrayList<String> allKnownMembersOnNetwork;
   private HashMap<String, InetAddress> routing;
@@ -17,7 +19,6 @@ public class Client extends java.util.Observable {
   private String name;
   private Advertiser advertiser;
   private AdvertismentsReceiver advertismentsReceiver;
-  private PrivateKey privateKey;
 
   public Client(String name) {
     this.neigbours = new ArrayList<>();
@@ -86,6 +87,13 @@ public class Client extends java.util.Observable {
     return routing;
   }
 
+  /**
+   * Merges received routing table with client's routing table forming new routing table
+   *
+   * @param receivedTable Routing table received from another node
+   * @param address Address of the node from whom routing table is coming from
+   * @param sendersName Name of received routing table
+   */
   public void receiveHashMap(
       HashMap<String, InetAddress> receivedTable, InetAddress address, String sendersName) {
     for (HashMap.Entry<String, InetAddress> a : receivedTable.entrySet()) {

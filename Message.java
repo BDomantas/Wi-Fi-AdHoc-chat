@@ -7,11 +7,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/** Formats message to the protocol rules and encrypts message */
 public class Message {
   String payload;
   String header;
 
-  // MESSAGE PROTOKOLAS: TYPE RECIPIENT_NAME SENDERS_NAME CONTENT
+  // MESSAGE PROTOCOL: TYPE RECIPIENT_NAME SENDERS_NAME CONTENT
   public static byte[] encode(
       messageType type,
       String recipient,
@@ -69,7 +70,12 @@ public class Message {
       words.add(new String(word));
     }
     byte[] content = new byte[Constants.MESSAGE_LENGTH];
-    System.arraycopy(message, (Constants.HEADER_NAME_LENGTH * 3), content, 0, length - (Constants.HEADER_NAME_LENGTH * 3));
+    System.arraycopy(
+        message,
+        (Constants.HEADER_NAME_LENGTH * 3),
+        content,
+        0,
+        length - (Constants.HEADER_NAME_LENGTH * 3));
     if (words.get(0).trim().toString().equals("ONE")) {
       try {
         content = decrypt(key, content);

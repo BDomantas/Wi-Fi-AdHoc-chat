@@ -3,6 +3,7 @@ package Routing;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/** Gluing all parts of the program - advertisers, communicator anc GUI */
 public class Controller {
 
   private NameAsker asker;
